@@ -15,6 +15,7 @@ en api.ipify.org y manejar el error de forma adecuada.
 
 import requests
 
+
 def get_nonexistent_resource():
     """
     Realiza una petición GET a un recurso inexistente en api.ipify.org y maneja el error.
@@ -32,18 +33,36 @@ def get_nonexistent_resource():
     """
     url = "https://api.ipify.org/ip"  # URL incorrecta a propósito para generar un 404
 
-    # Completa esta función para:
-    # 1. Realizar la petición GET a la URL proporcionada
-    # 2. Capturar la excepción o error HTTP (no interrumpir la ejecución)
-    # 3. Extraer la información solicitada del error
-    # 4. Devolver un diccionario con la información del error
-    pass
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        # Si no hay error, devolvemos la información de la respuesta
+        return {
+            "status_code": response.status_code,
+            "error_message": None,
+            "requested_url": url,
+        }
+    except requests.HTTPError as e:
+        return {
+            "status_code": response.status_code,
+            "error_message": str(e),
+            "requested_url": url,
+        }
+    except Exception as e:
+        return {
+            "status_code": None,
+            "error_message": str(e),
+            "requested_url": url,
+        }
+
 
 if __name__ == "__main__":
     # Ejemplo de uso de la función
     error_info = get_nonexistent_resource()
     if error_info:
-        print(f"Error {error_info['status_code']} al acceder a {error_info['requested_url']}")
+        print(
+            f"Error {error_info['status_code']} al acceder a {error_info['requested_url']}"
+        )
         print(f"Mensaje: {error_info.get('error_message', 'No disponible')}")
     else:
         print("No se pudo procesar la respuesta")
