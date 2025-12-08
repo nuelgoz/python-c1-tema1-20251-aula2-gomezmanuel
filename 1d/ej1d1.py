@@ -17,12 +17,13 @@ y permiten concentrarse en el análisis de datos en lugar de en los detalles té
 de la comunicación con la API.
 """
 
-import pybikes
-import pandas as pd
-import time
-from typing import List, Dict, Any, Optional
-import matplotlib.pyplot as plt
 import sys
+import time
+from typing import Any, Dict, List, Optional
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import pybikes
 
 
 def listar_sistemas_disponibles() -> List[str]:
@@ -32,9 +33,10 @@ def listar_sistemas_disponibles() -> List[str]:
     Returns:
         List[str]: Lista de identificadores de sistemas disponibles
     """
-    # Implementa aquí la lógica para obtener y devolver la lista
-    # de sistemas disponibles en pybikes
-    pass
+    try:
+        return list(pybikes.get_all_data().keys())
+    except Exception:
+        return []
 
 
 def buscar_sistema_por_ciudad(ciudad: str) -> List[str]:
@@ -47,9 +49,19 @@ def buscar_sistema_por_ciudad(ciudad: str) -> List[str]:
     Returns:
         List[str]: Lista de sistemas que coinciden con la búsqueda
     """
-    # Implementa aquí la lógica para buscar y devolver sistemas
-    # que coincidan con la ciudad especificada
-    pass
+    try:
+        all_data = pybikes.get_all_data()
+        resultados = []
+        ciudad_lower = ciudad.lower()
+        for tag, info in all_data.items():
+            # Buscar en city o en el nombre del sistema
+            system_city = info.get("city", "").lower()
+            system_name = info.get("name", "").lower()
+            if ciudad_lower in system_city or ciudad_lower in system_name:
+                resultados.append(tag)
+        return resultados
+    except Exception:
+        return []
 
 
 def obtener_info_sistema(tag: str) -> Dict[str, Any]:
@@ -62,9 +74,13 @@ def obtener_info_sistema(tag: str) -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: Metadatos del sistema o None si no existe
     """
-    # Implementa aquí la lógica para obtener y devolver
-    # los metadatos del sistema especificado
-    pass
+    try:
+        all_data = pybikes.get_all_data()
+        if tag in all_data:
+            return all_data[tag]
+        return None
+    except Exception:
+        return None
 
 
 def obtener_estaciones(tag: str) -> Optional[List]:
@@ -77,9 +93,12 @@ def obtener_estaciones(tag: str) -> Optional[List]:
     Returns:
         Optional[List]: Lista de objetos estación o None si hay error
     """
-    # Implementa aquí la lógica para obtener y devolver
-    # la lista de estaciones del sistema especificado
-    pass
+    try:
+        sistema = pybikes.get(tag)
+        sistema.update()
+        return sistema.stations
+    except Exception:
+        return None
 
 
 def crear_dataframe_estaciones(estaciones: List) -> pd.DataFrame:
@@ -92,10 +111,21 @@ def crear_dataframe_estaciones(estaciones: List) -> pd.DataFrame:
     Returns:
         pd.DataFrame: DataFrame con la información de las estaciones
     """
-    # Implementa aquí la lógica para convertir la lista de estaciones
-    # en un DataFrame de pandas con al menos las columnas:
-    # nombre, latitud, longitud, bicicletas disponibles, espacios libres
-    pass
+    if not estaciones:
+        return pd.DataFrame(columns=["name", "latitude", "longitude", "bikes", "free"])
+
+    data = []
+    for estacion in estaciones:
+        data.append(
+            {
+                "name": estacion.name,
+                "latitude": estacion.latitude,
+                "longitude": estacion.longitude,
+                "bikes": estacion.bikes,
+                "free": estacion.free,
+            }
+        )
+    return pd.DataFrame(data)
 
 
 def visualizar_estaciones(df: pd.DataFrame) -> None:
@@ -105,9 +135,20 @@ def visualizar_estaciones(df: pd.DataFrame) -> None:
     Args:
         df (pd.DataFrame): DataFrame con la información de las estaciones
     """
-    # Implementa aquí la lógica para crear un gráfico de barras que muestre
-    # las 10 estaciones con más bicicletas disponibles
-    pass
+    if df.empty:
+        return
+
+    # Ordenar por bicicletas disponibles y tomar las 10 primeras
+    top_10 = df.nlargest(10, "bikes")
+
+    # Crear gráfico de barras
+    plt.figure(figsize=(12, 6))
+    plt.barh(top_10["name"], top_10["bikes"], color="steelblue")
+    plt.xlabel("Bicicletas disponibles")
+    plt.ylabel("Estación")
+    plt.title("Top 10 estaciones con más bicicletas disponibles")
+    plt.tight_layout()
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -144,7 +185,7 @@ if __name__ == "__main__":
 
             # Estadísticas básicas
             print("\nEstadísticas de bicicletas disponibles:")
-            print(df['bikes'].describe())
+            print(df["bikes"].describe())
 
             # Visualización
             print("\nVisualizando estaciones con más bicicletas disponibles...")
@@ -153,4 +194,3 @@ if __name__ == "__main__":
             print("No se pudieron obtener las estaciones.")
     else:
         print("El sistema 'bicing' no está disponible en pybikes.")
-
