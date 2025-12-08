@@ -14,6 +14,7 @@ de ipify.org usando el formato JSON, que es más estructurado que el texto plano
 
 import requests
 
+
 def get_user_ip_json():
     """
     Realiza una petición GET a api.ipify.org para obtener la dirección IP pública
@@ -29,12 +30,21 @@ def get_user_ip_json():
     # 3. Convertir la respuesta a formato JSON
     # 4. Extraer y devolver la IP del campo "ip" del objeto JSON
     # 5. Devolver None si hay algún error
-    pass
+    try:
+        response = requests.get("https://api.ipify.org/?format=json")
+        if response.status_code == 200:
+            data = response.json()
+            return data["ip"]
+        else:
+            return None
+    except Exception:
+        return None
+
 
 def get_response_info():
     """
     Obtiene información adicional sobre la respuesta HTTP al consultar la API.
-    
+
     Returns:
         dict: Diccionario con información de la respuesta (tipo de contenido,
               tiempo de respuesta, tamaño de la respuesta)
@@ -48,14 +58,26 @@ def get_response_info():
     #    - 'elapsed_time': El tiempo que tardó la petición (en milisegundos)
     #    - 'response_size': El tamaño de la respuesta en bytes
     # 4. Devolver None si hay algún error
-    pass
+    try:
+        response = requests.get("https://api.ipify.org/?format=json")
+        if response.status_code == 200:
+            return {
+                "content_type": response.headers.get("Content-Type"),
+                "elapsed_time": response.elapsed.total_seconds() * 1000,
+                "response_size": len(response.content),
+            }
+        else:
+            return None
+    except Exception:
+        return None
+
 
 if __name__ == "__main__":
     # Ejemplo de uso de las funciones
     ip = get_user_ip_json()
     if ip:
         print(f"Tu dirección IP pública es: {ip}")
-        
+
         # Mostrar información adicional de la respuesta
         info = get_response_info()
         if info:
