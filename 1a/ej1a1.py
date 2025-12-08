@@ -12,7 +12,6 @@ Tu tarea es completar la función indicada para realizar una consulta básica
 a la API de ipify.org, un servicio estable que proporciona la IP pública.
 """
 
-import requests
 
 def get_user_ip():
     """
@@ -23,12 +22,17 @@ def get_user_ip():
         str: La dirección IP si la petición es exitosa
         None: Si ocurre un error en la petición
     """
-    # Completa esta función para:
-    # 1. Realizar una petición GET a la URL https://api.ipify.org (sin parámetros)
-    # 2. Verificar si la petición fue exitosa (código 200)
-    # 3. Devolver el texto de la respuesta directamente (contiene la IP)
-    # 4. Devolver None si hay algún error
-    pass
+    import requests
+
+    try:
+        response = requests.get("https://api.ipify.org")
+        if response.status_code == 200:
+            return response.text
+        else:
+            return None
+    except Exception:
+        return None
+
 
 if __name__ == "__main__":
     # Ejemplo de uso de la función
