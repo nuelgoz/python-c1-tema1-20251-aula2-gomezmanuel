@@ -19,7 +19,8 @@ del cliente mediante self.client_address.
 """
 
 import json
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
 
 class MyHTTPRequestHandler(BaseHTTPRequestHandler):
     """
@@ -35,14 +36,19 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
 
         Para otras rutas, devuelve un código de estado 404 (Not Found).
         """
-        # Implementa aquí la lógica para responder a las peticiones GET
-        # 1. Verifica la ruta solicitada (self.path)
-        # 2. Si la ruta es "/ip", envía una respuesta 200 con la IP del cliente en formato JSON
-        # 3. Si la ruta es cualquier otra, envía una respuesta 404
+        if self.path == "/ip":
+            client_ip = self._get_client_ip()
+            response_data = json.dumps({"ip": client_ip})
 
-        # PISTA: Para obtener la IP del cliente puedes usar el método auxiliar _get_client_ip()
-        pass
-
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(response_data.encode())
+        else:
+            self.send_response(404)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": "Not Found"}).encode())
 
     def _get_client_ip(self):
         """
@@ -53,11 +59,18 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
         Returns:
             str: La dirección IP del cliente
         """
-        # Implementa aquí la lógica para extraer la IP del cliente
-        # 1. Verifica si existe el encabezado 'X-Forwarded-For' (común en servidores con proxy)
-        # 2. Si no existe, verifica otros encabezados comunes como 'X-Real-IP'
-        # 3. Como último recurso, utiliza self.client_address[0]
-        pass
+        # Verificar X-Forwarded-For (común en servidores con proxy)
+        x_forwarded_for = self.headers.get("X-Forwarded-For")
+        if x_forwarded_for:
+            return x_forwarded_for.split(",")[0].strip()
+
+        # Verificar X-Real-IP
+        x_real_ip = self.headers.get("X-Real-IP")
+        if x_real_ip:
+            return x_real_ip
+
+        # Como último recurso, usar la dirección directa del cliente
+        return self.client_address[0]
 
 
 def create_server(host="localhost", port=8000):
@@ -68,6 +81,7 @@ def create_server(host="localhost", port=8000):
     httpd = HTTPServer(server_address, MyHTTPRequestHandler)
     return httpd
 
+
 def run_server(server):
     """
     Inicia el servidor HTTP
@@ -75,6 +89,7 @@ def run_server(server):
     print(f"Servidor iniciado en http://{server.server_name}:{server.server_port}")
     server.serve_forever()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     server = create_server()
     run_server(server)
