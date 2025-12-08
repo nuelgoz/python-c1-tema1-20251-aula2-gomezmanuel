@@ -26,6 +26,7 @@ en el cuerpo JSON y usar el campo "description" para proporcionar información d
 
 import requests
 
+
 def request_with_error_handling(url):
     """
     Realiza una petición GET a la URL proporcionada y maneja los diferentes tipos de
@@ -43,13 +44,71 @@ def request_with_error_handling(url):
             - error_type (str, opcional): "client_error" para 4xx, "server_error" para 5xx
             - message (str): Un mensaje descriptivo sobre el resultado de la petición
     """
-    # Completa esta función para manejar diferentes tipos de respuestas HTTP
-    # Debes gestionar al menos:
-    # - Respuestas exitosas (códigos 2xx)
-    # - Redirecciones (códigos 3xx)
-    # - Errores del cliente (códigos 4xx)
-    # - Errores del servidor (códigos 5xx)
-    pass
+    try:
+        response = requests.get(url, allow_redirects=False)
+        status_code = response.status_code
+
+        # Intentar obtener la descripción del JSON si está disponible
+        try:
+            json_data = response.json()
+            description = json_data.get("description", "")
+        except Exception:
+            description = ""
+
+        # Respuestas exitosas (2xx)
+        if 200 <= status_code < 300:
+            return {
+                "success": True,
+                "status_code": status_code,
+                "is_redirect": False,
+                "message": description or "Request successful",
+            }
+
+        # Redirecciones (3xx)
+        elif 300 <= status_code < 400:
+            redirect_url = response.headers.get("Location", "")
+            return {
+                "success": False,
+                "status_code": status_code,
+                "is_redirect": True,
+                "redirect_url": redirect_url,
+                "message": description or "Redirect",
+            }
+
+        # Errores del cliente (4xx)
+        elif 400 <= status_code < 500:
+            return {
+                "success": False,
+                "status_code": status_code,
+                "is_redirect": False,
+                "error_type": "client_error",
+                "message": description or "Client error",
+            }
+
+        # Errores del servidor (5xx)
+        elif 500 <= status_code < 600:
+            return {
+                "success": False,
+                "status_code": status_code,
+                "is_redirect": False,
+                "error_type": "server_error",
+                "message": description or "Server error",
+            }
+
+    except requests.exceptions.ConnectionError as e:
+        return {
+            "success": False,
+            "status_code": None,
+            "is_redirect": False,
+            "message": f"connection_error: {str(e)}",
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "status_code": None,
+            "is_redirect": False,
+            "message": f"Error: {str(e)}",
+        }
 
 
 if __name__ == "__main__":
