@@ -27,6 +27,7 @@ def get_gbfs_feeds():
         None: Si ocurre un error en la petición
     """
     # La URL base de la API de GBFS de Barcelona
+    # Se ha corregido el espacio al final de la URL
     base_url = "https://barcelona-sp.publicbikesystem.net/customer/gbfs/v2/gbfs.json"
 
     try:
@@ -64,6 +65,7 @@ def extract_feeds_info(feeds_data):
 
     try:
         # Extraer la lista de feeds para el idioma inglés (en)
+        # Se asume el idioma 'en' como en el ejemplo original
         feeds = feeds_data["data"]["en"]["feeds"]
 
         # Crear una lista con la información relevante de cada feed
