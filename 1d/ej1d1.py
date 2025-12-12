@@ -34,7 +34,18 @@ def listar_sistemas_disponibles() -> List[str]:
         List[str]: Lista de identificadores de sistemas disponibles
     """
     try:
-        return list(pybikes.get_all_data().keys())
+        # Get all data files and extract system tags
+        schemas = pybikes.get_schemas()
+        sistemas = []
+        for schema in schemas:
+            try:
+                instances = pybikes.get_instances(schema)
+                for _, instance in instances:
+                    sistemas.append(instance["tag"])
+            except Exception:
+                # Skip schemas that fail to load
+                continue
+        return sistemas
     except Exception:
         return []
 
@@ -50,15 +61,22 @@ def buscar_sistema_por_ciudad(ciudad: str) -> List[str]:
         List[str]: Lista de sistemas que coinciden con la búsqueda
     """
     try:
-        all_data = pybikes.get_all_data()
+        sistemas_disponibles = listar_sistemas_disponibles()
         resultados = []
         ciudad_lower = ciudad.lower()
-        for tag, info in all_data.items():
-            # Buscar en city o en el nombre del sistema
-            system_city = info.get("city", "").lower()
-            system_name = info.get("name", "").lower()
-            if ciudad_lower in system_city or ciudad_lower in system_name:
-                resultados.append(tag)
+        # Check each system for matching city name
+        for tag in sistemas_disponibles:
+            try:
+                _, info = pybikes.find_system(tag)
+                # Access metadata correctly - it's in the 'meta' field
+                meta = info.get("meta", {}) if info else {}
+                system_city = meta.get("city", "").lower() if meta else ""
+                system_name = meta.get("name", "").lower() if meta else ""
+                if ciudad_lower in system_city or ciudad_lower in system_name:
+                    resultados.append(tag)
+            except Exception:
+                # Skip systems that fail to load
+                continue
         return resultados
     except Exception:
         return []
@@ -75,10 +93,15 @@ def obtener_info_sistema(tag: str) -> Dict[str, Any]:
         Dict[str, Any]: Metadatos del sistema o None si no existe
     """
     try:
-        all_data = pybikes.get_all_data()
-        if tag in all_data:
-            return all_data[tag]
-        return None
+        _, info = pybikes.find_system(tag)
+        if not info:
+            return None
+
+        # Extract metadata fields expected by tests
+        result = {"tag": tag}
+        meta = info.get("meta", {})
+        result.update(meta)
+        return result
     except Exception:
         return None
 
